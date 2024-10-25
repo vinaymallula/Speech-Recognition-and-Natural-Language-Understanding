@@ -1,0 +1,185 @@
+Documentation of Speech Recognition and Natural Language Understanding
+
+Importing Necessary Libraries:
+
+*import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import os
+!pip install pyunpack
+!pip install patool
+!pip install py7zr
+!pip install resampy
+!pip install keras
+!pip install tensorflow
+import matplotlib.pyplot as plt
+import numpy as np
+import librosa
+import IPython.display as ipd
+from scipy.io import wavfile
+import resampy*
+
+We imported all Necessary libraries requried for our data preprocessing,visualization,to 
+prevent errors and to satisfy all requriments etc.
+
+Loading the data:
+
+*for dirname, _, filenames in os.walk('E:/Speech_recognition/train/train/audio/'):
+    for filename in filename[:5]:
+        print(os.path.join(dirname, filename))*
+
+The audio path:
+*train_audio_path = 'E:/Speech_recognition/train/train/audio/'*
+
+From the dataset we are visualizing the amplitude and the time:
+*samples, sample_rate = librosa.load(train_audio_path+'yes/0a7c2a8d_nohash_0.wav', sr = 16000)
+fig = plt.figure(figsize=(14, 8))
+ax1 = fig.add_subplot(211)
+ax1.set_title('Raw wave of ' + '../input/train/audio/yes/0a7c2a8d_nohash_0.wav')
+ax1.set_xlabel('time')
+ax1.set_ylabel('Amplitude')
+ax1.plot(np.linspace(0, sample_rate/len(samples), sample_rate), samples)*
+
+
+Training the sample audios (approximately we trained 5 audios for the training):
+*sample_rate=40000
+samples, sample_rate = librosa.load(train_audio_path+'yes/0a7c2a8d_nohash_0.wav', sr = sample_rate)
+ipd.Audio(samples, rate=sample_rate)*
+
+
+Visualizing the no of recordings with each recording:
+*no_of_recordings=[]
+for label in labels:
+    waves = [f for f in os.listdir(train_audio_path + '/'+ label) if f.endswith('.wav')]
+    no_of_recordings.append(len(waves))
+    
+#plot
+plt.figure(figsize=(30,5))
+index = np.arange(len(labels))
+plt.bar(index, no_of_recordings)
+plt.xlabel('Commands', fontsize=12)
+plt.ylabel('No of recordings', fontsize=12)
+plt.xticks(index, labels, fontsize=15, rotation=60)
+plt.title('No. of recordings for each command')
+plt.show()*
+
+Here are the sample keywords which we are trained in the data by random sampling:
+*all_wave = []
+all_label = []
+for label in labels:
+    print(label)
+    waves = [f for f in os.listdir(train_audio_path + '/'+ label) if f.endswith('.wav')]
+    for wav in waves:
+        samples, sample_rate = librosa.load(train_audio_path + '/' + label + '/' + wav, sr = 16000)
+        samples = librosa.resample(samples, orig_sr=sample_rate, target_sr=8000)
+        if(len(samples)== 8000) : 
+            all_wave.append(samples)
+            all_label.append(label)*
+
+
+
+We splitted our data into train and test data with X,y from sklearn.model_selection:
+*from sklearn.model_selection import train_test_split
+x_tr, x_val, y_tr, y_val = train_test_split(np.array(all_wave),np.array(y),stratify=y,test_size = 0.2,random_state=777,shuffle=True)*
+
+
+Graph plot between the train and test sets:
+*from matplotlib import pyplot
+pyplot.plot(history.history['loss'], label='train')
+pyplot.plot(history.history['val_loss'], label='test')
+pyplot.legend()
+pyplot.show()*
+
+Imporing the speech required functions:
+*import sounddevice as sd
+import soundfile as sf*
+
+Code for reading voice commands:
+*filepath = 'C:/Users/vinnu'
+samples, sample_rate = librosa.load(filepath + '/' + 'yes.wav', sr = 16000)
+samples = librosa.resample(samples, orig_sr=sample_rate, target_sr=8000)
+ipd.Audio(samples,rate=8000)*
+
+Code for converting the voice into text:
+*def predict(audio):
+    new_model=load_model('E:/Speech_recognition/SpeechRecogModel.keras')
+    prob=new_model.predict(audio.reshape(1,8000,1))
+    index=np.argmax(prob[0])
+    return classes[index]
+
+predict(samples)*
+
+
+Graphical User Interface for the Speech Recognition and Natural Language Understanding:
+
+Importing the necessary libraries for the GUI.
+*import tkinter as tk
+from PIL import Image
+from tkinter import messagebox*
+
+Here is the code for the GUI:
+*def record_text():
+    
+    count = 0
+    anim = None
+    animation(count)
+    samplerate = 16000  
+    duration = 1 # seconds
+    filename = 'yes.wav'
+    print("start")
+    mydata = sd.rec(int(samplerate * duration), samplerate=samplerate,channels=1, blocking=True)
+    print("end")
+    sd.wait()
+    sf.write(filename, mydata, samplerate)
+
+
+
+    ##reading the voice commands
+    filepath = 'C:/Users/vinnu'
+    samples, sample_rate = librosa.load(filepath + '/' + 'yes.wav', sr = 16000)
+    samples = librosa.resample(samples, orig_sr=sample_rate, target_sr=8000)
+    ipd.Audio(samples,rate=8000) 
+    
+    T = tk.Text(root, height=2, width=30, bg="black", fg="azure")
+    T.pack()
+    T.insert(tk.END, "Did you said : " + predict(samples))
+ 
+
+    print(predict(samples))
+
+
+
+
+root = tk.Tk()
+file="E:/Speech_recognition/Voice2.gif"
+
+info = Image.open(file)
+
+frames = 80  # gives total number of frames that gif contains
+
+#creating list of PhotoImage objects for each frames
+im = [tk.PhotoImage(file=file,format=f"gif -index {i}") for i in range(frames)]
+
+classes = ['down', 'go', 'left', 'no', 'off', 'on', 'right', 'stop', 'up', 'yes']
+
+
+gif_label = tk.Label(root,image="")
+gif_label.pack()
+
+start = tk.Button(root,text="start",bg="black", fg="azure",command=record_text)
+start.pack()
+
+
+
+root.mainloop()*
+
+Finally our GUI code is ready for the Speech Recognition and we only trained some of the words like:
+[labels=["yes", "no", "up", "down", "left", "right", "on", "off", "stop", "go"]]
+
+So we can test our model with only this labels and we can also increase out lables and van make train with multiple labels and key words. 
+
+
+
+
+
+
+
